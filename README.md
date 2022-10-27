@@ -4,7 +4,7 @@ Sorting algorithm visualization written in Rust as learning projects
 
 ## Goals
 
-[ ] - Sorting algorithms:
+- [ ] Sorting algorithms:
     - [ ] Insertion sort
     - [ ] Bubble sort
     - [ ] Quick sort
@@ -12,4 +12,4 @@ Sorting algorithm visualization written in Rust as learning projects
     - [ ] Heap sort
     - [ ] Bogo sort
 
-[ ] - Visualization: 
+- [ ] Visualization: Simple visualization for algorithms
