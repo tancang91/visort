@@ -1,14 +1,16 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+mod algorithm;
+
+pub use algorithm::{Sorter, BubbleSorter};
+
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+    fn test_sorting() {
+        let mut things = vec![4, 2, 3, 5, 1];
+        BubbleSorter.sort(&mut things);
+        assert_eq!(things, vec![1, 2, 3, 4, 5]);
     }
 }
