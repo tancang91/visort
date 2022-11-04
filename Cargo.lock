@@ -5,3 +5,10 @@ version = 3
 [[package]]
 name = "visort"
 version = "0.1.0"
+dependencies = [
+ "visort-core",
+]
+
+[[package]]
+name = "visort-core"
+version = "0.1.0"
