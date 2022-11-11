@@ -4,3 +4,6 @@ members = [
     "visort-core",
     "visort"
 ]
+
+[profile.dev.package."*"]
+opt-level = 3

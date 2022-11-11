@@ -2,9 +2,9 @@ use super::Sorter;
 
 pub struct BubbleSorter;
 
-
-impl<T> Sorter<T> for BubbleSorter 
-    where T: Ord
+impl<T> Sorter<T> for BubbleSorter
+where
+    T: Ord,
 {
     fn sort(&self, slice: &mut [T]) {
         let mut swapped = true;
