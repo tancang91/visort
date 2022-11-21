@@ -34,7 +34,7 @@ fn main() {
             SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(TIMESTEP_1_PER_SECOND))
                 .with_system(render_system)
-                .with_system(sorting_system)
+                .with_system(sorting_system),
         )
         .run();
 }
@@ -85,16 +85,20 @@ where
     let mut it = data.into_iter();
     match it.next() {
         None => true,
-        Some(first) => it.scan(first, |state, next| {
-            let cmp = *state <= next;
-            *state = next;
-            Some(cmp)
-        }).all(|b| b),
+        Some(first) => it
+            .scan(first, |state, next| {
+                let cmp = *state <= next;
+                *state = next;
+                Some(cmp)
+            })
+            .all(|b| b),
     }
 }
 
 fn sorting_system(mut bar_collection: ResMut<BarCollection>, bars: Query<&Bar>) {
-    let ranges: Vec<_> = bar_collection.bars.iter()
+    let ranges: Vec<_> = bar_collection
+        .bars
+        .iter()
         .map(|entity| bars.get(entity.clone()).unwrap().length as i32)
         .collect();
 
