@@ -2,10 +2,12 @@ use bevy::time::FixedTimestep;
 use bevy::{prelude::*, sprite::Anchor};
 use rand::seq::SliceRandom;
 
+use visort_core::{BubbleSorter, Sorter};
+
 const BACKGROUND_COLOR: Color = Color::rgb(0.9, 0.9, 0.9);
 
 // Default width
-const BAR_HEIGH: f32 = 6.0;
+const BAR_HEIGH: f32 = 2.0;
 
 // Window setting
 const WINDOW_WIDTH: f32 = 1000.0;
@@ -15,9 +17,9 @@ const WINDOW_PADDING: f32 = 5.0;
 // Bar setting
 const BAR_COLOR: Color = Color::RED;
 const BAR_PADDING: f32 = 4.0;
-const NUMBER_BARS: u8 = 20;
+const NUMBER_BARS: u8 = 150;
 
-const TIMESTEP_1_PER_SECOND: f64 = 60.0 / 60.0;
+const TIMESTEP_1_PER_SECOND: f64 = 1.0 / 120.0;
 
 fn main() {
     App::new()
@@ -47,6 +49,8 @@ fn setup(mut commands: Commands, windows: Res<Windows>) {
 
     let mut bar_collection = BarCollection {
         bars: Vec::with_capacity(NUMBER_BARS as usize),
+        snapshot: None,
+        index: -1,
     };
 
     // Rectangle
@@ -73,6 +77,8 @@ fn setup(mut commands: Commands, windows: Res<Windows>) {
 
         bar_collection.bars.push(entity);
     }
+
+    bar_collection.index = 0;
 
     commands.insert_resource(bar_collection);
 }
@@ -102,14 +108,9 @@ fn sorting_system(mut bar_collection: ResMut<BarCollection>, bars: Query<&Bar>) 
         .map(|entity| bars.get(entity.clone()).unwrap().length as i32)
         .collect();
 
-    if !is_sorted(ranges) {
-        bar_collection.bars.sort_by_key(|entity| {
-            if let Ok(bar) = bars.get(entity.clone()) {
-                bar.length as i32
-            } else {
-                -1
-            }
-        });
+    match bar_collection.snapshot {
+        None => bar_collection.snapshot = Some(BubbleSorter.sort(&ranges)),
+        _ => {},
     }
 
     // let mut rng = rand::thread_rng();
@@ -117,25 +118,44 @@ fn sorting_system(mut bar_collection: ResMut<BarCollection>, bars: Query<&Bar>) 
 }
 
 fn render_system(
-    bar_collection: ResMut<BarCollection>,
+    mut bar_collection: ResMut<BarCollection>,
     mut query: Query<(&Bar, &mut Sprite, &mut Transform)>,
     windows: Res<Windows>,
 ) {
-    if bar_collection.is_changed() {
-        let height = windows.get_primary().unwrap().height();
+    let height = windows.get_primary().unwrap().height();
 
-        for i in 0..bar_collection.bars.len() {
-            let bar = bar_collection.bars[i];
-            if let Ok((_, mut sprite, mut transform)) = query.get_mut(bar) {
-                transform.translation.y = rank_to_y(i as u32, height);
-                sprite.color = Color::BLUE;
+    //for i in 0..bar_collection.bars.len() {
+        //let bar = bar_collection.bars[i];
+        //if let Ok((_, mut sprite, mut transform)) = query.get_mut(bar) {
+            //transform.translation.y = rank_to_y(i as u32, height);
+            //sprite.color = Color::BLUE;
+        //}
+    //}
+    //
+    match bar_collection.snapshot {
+        Some(ref s) => {
+            let index = bar_collection.index as usize;
+            if index < s.len() {
+                let snapshot = s.get(index).unwrap();
+
+                for (rank, &index) in snapshot.iter().enumerate() {
+                    let bar = bar_collection.bars[index as usize];
+                    if let Ok((_, mut sprite, mut transform)) = query.get_mut(bar) {
+                        transform.translation.y = rank_to_y(rank as u32, height);
+                        sprite.color = Color::BLUE;
+                    }
+                }
+                bar_collection.index += 1;
             }
-        }
+        },
+        _ => {},
     }
 }
 
 struct BarCollection {
     bars: Vec<Entity>,
+    snapshot: Option<Vec<Vec<u32>>>,
+    index: i32,
 }
 
 #[derive(Component)]
