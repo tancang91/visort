@@ -6,18 +6,17 @@ use visort_core::{BubbleSorter, Sorter};
 
 const BACKGROUND_COLOR: Color = Color::rgb(0.9, 0.9, 0.9);
 
-// Default width
-const BAR_HEIGH: f32 = 2.0;
-
 // Window setting
 const WINDOW_WIDTH: f32 = 1000.0;
 const WINDOW_HEIGHT: f32 = 600.0;
 const WINDOW_PADDING: f32 = 5.0;
 
 // Bar setting
+const BAR_HEIGH: f32 = 4.0;
+const BAR_BASE_WIDTH: f32 = 20.0;
 const BAR_COLOR: Color = Color::RED;
-const BAR_PADDING: f32 = 4.0;
-const NUMBER_BARS: u8 = 150;
+const BAR_PADDING: f32 = 2.0;
+const NUMBER_BARS: u8 = 50;
 
 const TIMESTEP_1_PER_SECOND: f64 = 1.0 / 120.0;
 
@@ -56,11 +55,10 @@ fn setup(mut commands: Commands, windows: Res<Windows>) {
     // Rectangle
     let x: f32 = -1.0 * (window.width() / 2.0) + WINDOW_PADDING;
     let y_base: f32 = window.height() / 2.0 - WINDOW_PADDING;
-    let width_base: f32 = 20.0;
 
     let mut range: Vec<f32> = (0..NUMBER_BARS)
         .into_iter()
-        .map(|w| width_base * (2.0 + 0.2 * w as f32))
+        .map(|w| BAR_BASE_WIDTH * (2.0 + 0.2 * w as f32))
         .collect();
 
     range.shuffle(&mut rng);
@@ -69,7 +67,7 @@ fn setup(mut commands: Commands, windows: Res<Windows>) {
         let entity = commands
             .spawn_bundle(BarBunndle::new(
                 x,
-                y_base - (delta as f32 * (BAR_HEIGH + BAR_PADDING)),
+                rank_to_y(delta as u32, y_base),
                 w.clone(),
                 BAR_HEIGH,
             ))
@@ -77,7 +75,6 @@ fn setup(mut commands: Commands, windows: Res<Windows>) {
 
         bar_collection.bars.push(entity);
     }
-
     bar_collection.index = 0;
 
     commands.insert_resource(bar_collection);
@@ -112,9 +109,6 @@ fn sorting_system(mut bar_collection: ResMut<BarCollection>, bars: Query<&Bar>) 
         None => bar_collection.snapshot = Some(BubbleSorter.sort(&ranges)),
         _ => {},
     }
-
-    // let mut rng = rand::thread_rng();
-    // bar_collection.bars.shuffle(&mut rng);
 }
 
 fn render_system(
@@ -124,14 +118,6 @@ fn render_system(
 ) {
     let height = windows.get_primary().unwrap().height();
 
-    //for i in 0..bar_collection.bars.len() {
-        //let bar = bar_collection.bars[i];
-        //if let Ok((_, mut sprite, mut transform)) = query.get_mut(bar) {
-            //transform.translation.y = rank_to_y(i as u32, height);
-            //sprite.color = Color::BLUE;
-        //}
-    //}
-    //
     match bar_collection.snapshot {
         Some(ref s) => {
             let index = bar_collection.index as usize;
