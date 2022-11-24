@@ -10,7 +10,8 @@ where
         let mut swapped = true;
         let mut new_slice = slice.to_vec();
 
-        let first: Vec<u32> = new_slice.iter()
+        let first: Vec<u32> = new_slice
+            .iter()
             .enumerate()
             .map(|(i, _)| i as u32)
             .collect();
@@ -24,9 +25,7 @@ where
                     new_slice.swap(i - 1, i);
                     swapped = true;
 
-                    let mut new = s.get(s.len() - 1)
-                        .unwrap()
-                        .clone();
+                    let mut new = s.get(s.len() - 1).unwrap().clone();
                     new.swap(i - 1, i);
                     s.push(new);
                 }
