@@ -1,3 +1,5 @@
+mod utils;
+
 use bevy::time::FixedTimestep;
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_egui::{egui, egui::TextureFilter, EguiContext, EguiPlugin, EguiSettings};
