@@ -2,12 +2,12 @@ use bevy::time::FixedTimestep;
 use bevy::{prelude::*, sprite::Anchor};
 use rand::seq::SliceRandom;
 
-use visort_core::{BubbleSorter, Sorter};
+use visort_core::{BubbleSorter, InsertionSorter, Sorter};
 
 const BACKGROUND_COLOR: Color = Color::rgb(0.9, 0.9, 0.9);
 
 // Window setting
-const WINDOW_WIDTH: f32 = 1000.0;
+const WINDOW_WIDTH: f32 = 800.0;
 const WINDOW_HEIGHT: f32 = 600.0;
 const WINDOW_PADDING: f32 = 5.0;
 
@@ -22,13 +22,15 @@ const TIMESTEP_1_PER_SECOND: f64 = 1.0 / 120.0;
 
 fn main() {
     App::new()
-        .insert_resource(WindowDescriptor {
-            title: "I am a window!".to_string(),
-            width: WINDOW_WIDTH,
-            height: WINDOW_HEIGHT,
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            window: WindowDescriptor {
+                title: "I am a window!".to_string(),
+                width: WINDOW_WIDTH,
+                height: WINDOW_HEIGHT,
+                ..default()
+            },
             ..default()
-        })
-        .add_plugins(DefaultPlugins)
+        }))
         .insert_resource(ClearColor(BACKGROUND_COLOR))
         .add_startup_system(setup)
         .add_system_set(
@@ -106,8 +108,8 @@ fn sorting_system(mut bar_collection: ResMut<BarCollection>, bars: Query<&Bar>) 
         .collect();
 
     match bar_collection.snapshot {
-        None => bar_collection.snapshot = Some(BubbleSorter.sort(&ranges)),
-        _ => {},
+        None => bar_collection.snapshot = Some(InsertionSorter.sort(&ranges)),
+        _ => {}
     }
 }
 
@@ -133,11 +135,12 @@ fn render_system(
                 }
                 bar_collection.index += 1;
             }
-        },
-        _ => {},
+        }
+        _ => {}
     }
 }
 
+#[derive(Resource)]
 struct BarCollection {
     bars: Vec<Entity>,
     snapshot: Option<Vec<Vec<u32>>>,

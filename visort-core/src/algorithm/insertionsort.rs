@@ -18,7 +18,7 @@ where
         // [ sorted | not sorted ]
         for unsorted in 1..new_slice.len() {
             let mut i = unsorted;
-            while i > 0 &&  new_slice[i - 1] > new_slice[i] {
+            while i > 0 && new_slice[i - 1] > new_slice[i] {
                 new_slice.swap(i - 1, i);
 
                 let mut new = s.get(s.len() - 1).unwrap().clone();
