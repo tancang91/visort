@@ -1,5 +1,7 @@
 use bevy::time::FixedTimestep;
 use bevy::{prelude::*, sprite::Anchor};
+use bevy_egui::{egui, egui::TextureFilter, EguiContext, EguiPlugin, EguiSettings};
+
 use rand::seq::SliceRandom;
 
 use visort_core::{BubbleSorter, InsertionSorter, Sorter};
@@ -31,6 +33,7 @@ fn main() {
             },
             ..default()
         }))
+        .add_plugin(EguiPlugin)
         .insert_resource(ClearColor(BACKGROUND_COLOR))
         .add_startup_system(setup)
         .add_system_set(
@@ -39,6 +42,7 @@ fn main() {
                 .with_system(render_system)
                 .with_system(sorting_system),
         )
+        .add_system(ui_system)
         .run();
 }
 
@@ -52,6 +56,7 @@ fn setup(mut commands: Commands, windows: Res<Windows>) {
         bars: Vec::with_capacity(NUMBER_BARS as usize),
         snapshot: None,
         index: -1,
+        algorithm: SortAlgorithm::BubbleSort,
     };
 
     // Rectangle
@@ -116,6 +121,7 @@ fn sorting_system(mut bar_collection: ResMut<BarCollection>, bars: Query<&Bar>) 
 fn render_system(
     mut bar_collection: ResMut<BarCollection>,
     mut query: Query<(&Bar, &mut Sprite, &mut Transform)>,
+    mut egui_ctx: ResMut<EguiContext>,
     windows: Res<Windows>,
 ) {
     let height = windows.get_primary().unwrap().height();
@@ -137,7 +143,42 @@ fn render_system(
             }
         }
         _ => {}
-    }
+    };
+}
+
+fn ui_system(mut bar_collection: ResMut<BarCollection>, mut egui_ctx: ResMut<EguiContext>) {
+    egui::SidePanel::right("config_panel")
+        //.default_width(100.0)
+        .show(egui_ctx.ctx_mut(), |ui| {
+            ui.allocate_space(egui::Vec2::new(100.0, 20.0));
+            ui.vertical(|ui| {
+                ui.label("Select your algorithm");
+                egui::ComboBox::from_label("")
+                    .selected_text(format!("{:?}", bar_collection.algorithm))
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(
+                            &mut bar_collection.algorithm,
+                            SortAlgorithm::BubbleSort,
+                            "BubbleSort",
+                        );
+                        ui.selectable_value(
+                            &mut bar_collection.algorithm,
+                            SortAlgorithm::InsertionSort,
+                            "InsertionSort",
+                        );
+                    });
+            });
+            ui.allocate_space(egui::Vec2::new(100.0, 2.0));
+            if ui.button("Run").clicked() {}
+            ui.end_row();
+        });
+}
+
+#[derive(Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+enum SortAlgorithm {
+    InsertionSort,
+    BubbleSort,
 }
 
 #[derive(Resource)]
@@ -145,6 +186,7 @@ struct BarCollection {
     bars: Vec<Entity>,
     snapshot: Option<Vec<Vec<u32>>>,
     index: i32,
+    algorithm: SortAlgorithm,
 }
 
 #[derive(Component)]
