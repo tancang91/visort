@@ -2,7 +2,7 @@ mod utils;
 
 use bevy::time::FixedTimestep;
 use bevy::{prelude::*, sprite::Anchor};
-use bevy_egui::{egui, egui::TextureFilter, EguiContext, EguiPlugin, EguiSettings};
+use bevy_egui::{egui, EguiContext, EguiPlugin};
 
 use rand::seq::SliceRandom;
 
@@ -24,6 +24,13 @@ const NUMBER_BARS: u8 = 50;
 
 const TIMESTEP_1_PER_SECOND: f64 = 1.0 / 120.0;
 
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+enum AppState {
+    NEW,
+    RUNNING,
+    END,
+}
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -35,31 +42,39 @@ fn main() {
             },
             ..default()
         }))
+        .init_resource::<BarCollection>()
         .add_plugin(EguiPlugin)
         .insert_resource(ClearColor(BACKGROUND_COLOR))
-        .add_startup_system(setup)
+        .add_state(AppState::NEW)
+        .add_startup_system(setup_camera)
+        .add_system_set(SystemSet::on_enter(AppState::NEW).with_system(setup))
+        .add_system_set(SystemSet::on_enter(AppState::RUNNING).with_system(sorting_system))
         .add_system_set(
-            SystemSet::new()
+            SystemSet::on_update(AppState::RUNNING)
                 .with_run_criteria(FixedTimestep::step(TIMESTEP_1_PER_SECOND))
-                .with_system(render_system)
-                .with_system(sorting_system),
+                .with_system(render_system),
         )
         .add_system(ui_system)
         .run();
 }
 
-fn setup(mut commands: Commands, windows: Res<Windows>) {
-    commands.spawn_bundle(Camera2dBundle::default());
+fn setup_camera(mut commands: Commands) {
+    commands.spawn(Camera2dBundle::default());
+}
 
+fn setup(
+    mut commands: Commands,
+    mut bar_collection: ResMut<BarCollection>,
+    windows: Res<Windows>,
+    mut state: ResMut<State<AppState>>,
+) {
     let mut rng = rand::thread_rng();
     let window = windows.get_primary().unwrap();
 
-    let mut bar_collection = BarCollection {
-        bars: Vec::with_capacity(NUMBER_BARS as usize),
-        snapshot: None,
-        index: -1,
-        algorithm: SortAlgorithm::BubbleSort,
-    };
+    bar_collection.bars = Vec::with_capacity(NUMBER_BARS as usize);
+    bar_collection.snapshot = None;
+    bar_collection.index = 0;
+    bar_collection.sorted = false;
 
     // Rectangle
     let x: f32 = -1.0 * (window.width() / 2.0) + WINDOW_PADDING;
@@ -74,7 +89,7 @@ fn setup(mut commands: Commands, windows: Res<Windows>) {
 
     for (delta, w) in range.iter().enumerate() {
         let entity = commands
-            .spawn_bundle(BarBunndle::new(
+            .spawn(BarBunndle::new(
                 x,
                 rank_to_y(delta as u32, y_base),
                 w.clone(),
@@ -84,27 +99,8 @@ fn setup(mut commands: Commands, windows: Res<Windows>) {
 
         bar_collection.bars.push(entity);
     }
-    bar_collection.index = 0;
 
-    commands.insert_resource(bar_collection);
-}
-
-fn is_sorted<I>(data: I) -> bool
-where
-    I: IntoIterator,
-    I::Item: Ord,
-{
-    let mut it = data.into_iter();
-    match it.next() {
-        None => true,
-        Some(first) => it
-            .scan(first, |state, next| {
-                let cmp = *state <= next;
-                *state = next;
-                Some(cmp)
-            })
-            .all(|b| b),
-    }
+    state.overwrite_set(AppState::RUNNING).unwrap();
 }
 
 fn sorting_system(mut bar_collection: ResMut<BarCollection>, bars: Query<&Bar>) {
@@ -114,38 +110,50 @@ fn sorting_system(mut bar_collection: ResMut<BarCollection>, bars: Query<&Bar>) 
         .map(|entity| bars.get(entity.clone()).unwrap().length as i32)
         .collect();
 
-    match bar_collection.snapshot {
-        None => bar_collection.snapshot = Some(InsertionSorter.sort(&ranges)),
-        _ => {}
-    }
+    bar_collection.snapshot = Some(InsertionSorter.sort(&ranges));
+    bar_collection.sorted = true;
 }
 
 fn render_system(
     mut bar_collection: ResMut<BarCollection>,
     mut query: Query<(&Bar, &mut Sprite, &mut Transform)>,
-    mut egui_ctx: ResMut<EguiContext>,
+    mut state: ResMut<State<AppState>>,
     windows: Res<Windows>,
 ) {
-    let height = windows.get_primary().unwrap().height();
+    let current_state = state.current();
+    match current_state {
+        AppState::RUNNING => {
+            let height = windows.get_primary().unwrap().height();
+            match bar_collection.snapshot {
+                Some(ref s) => {
+                    let index = bar_collection.index as usize;
+                    if index < s.len() {
+                        let snapshot = s.get(index).unwrap();
 
-    match bar_collection.snapshot {
-        Some(ref s) => {
-            let index = bar_collection.index as usize;
-            if index < s.len() {
-                let snapshot = s.get(index).unwrap();
-
-                for (rank, &index) in snapshot.iter().enumerate() {
-                    let bar = bar_collection.bars[index as usize];
-                    if let Ok((_, mut sprite, mut transform)) = query.get_mut(bar) {
-                        transform.translation.y = rank_to_y(rank as u32, height);
-                        sprite.color = Color::BLUE;
+                        for (rank, &index) in snapshot.iter().enumerate() {
+                            let bar = bar_collection.bars[index as usize];
+                            if let Ok((_, mut sprite, mut transform)) = query.get_mut(bar) {
+                                transform.translation.y = rank_to_y(rank as u32, height);
+                                sprite.color = Color::BLUE;
+                            }
+                        }
+                        bar_collection.index += 1;
+                    } else if index == s.len() && bar_collection.sorted {
+                        state.overwrite_set(AppState::END).unwrap();
                     }
                 }
-                bar_collection.index += 1;
+                _ => {}
+            };
+        }
+
+        AppState::END => {
+            for (_, mut sprite, _) in query.iter_mut() {
+                sprite.color = Color::GREEN;
             }
         }
+
         _ => {}
-    };
+    }
 }
 
 fn ui_system(mut bar_collection: ResMut<BarCollection>, mut egui_ctx: ResMut<EguiContext>) {
@@ -176,19 +184,21 @@ fn ui_system(mut bar_collection: ResMut<BarCollection>, mut egui_ctx: ResMut<Egu
         });
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 enum SortAlgorithm {
-    InsertionSort,
+    #[default]
     BubbleSort,
+    InsertionSort,
 }
 
-#[derive(Resource)]
+#[derive(Resource, Default)]
 struct BarCollection {
     bars: Vec<Entity>,
     snapshot: Option<Vec<Vec<u32>>>,
     index: i32,
     algorithm: SortAlgorithm,
+    sorted: bool,
 }
 
 #[derive(Component)]

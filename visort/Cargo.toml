@@ -7,6 +7,6 @@ edition = "2021"
 
 [dependencies]
 visort-core = { path = "../visort-core" }
-bevy = { version = "0.9" }
+bevy = { version = "0.9" , features = ["dynamic"]}
 bevy_egui = "0.17"
 rand = "0.8"
