@@ -99,8 +99,6 @@ fn setup(
 
         bar_collection.bars.push(entity);
     }
-
-    state.overwrite_set(AppState::RUNNING).unwrap();
 }
 
 fn sorting_system(mut bar_collection: ResMut<BarCollection>, bars: Query<&Bar>) {
@@ -110,7 +108,14 @@ fn sorting_system(mut bar_collection: ResMut<BarCollection>, bars: Query<&Bar>) 
         .map(|entity| bars.get(entity.clone()).unwrap().length as i32)
         .collect();
 
-    bar_collection.snapshot = Some(InsertionSorter.sort(&ranges));
+    match bar_collection.algorithm {
+        SortAlgorithm::InsertionSort => {
+            bar_collection.snapshot = Some(InsertionSorter.sort(&ranges))
+        }
+        SortAlgorithm::BubbleSort => bar_collection.snapshot = Some(BubbleSorter.sort(&ranges)),
+        _ => {}
+    }
+
     bar_collection.sorted = true;
 }
 
@@ -156,7 +161,11 @@ fn render_system(
     }
 }
 
-fn ui_system(mut bar_collection: ResMut<BarCollection>, mut egui_ctx: ResMut<EguiContext>) {
+fn ui_system(
+    mut bar_collection: ResMut<BarCollection>,
+    mut egui_ctx: ResMut<EguiContext>,
+    mut state: ResMut<State<AppState>>,
+) {
     egui::SidePanel::right("config_panel")
         //.default_width(100.0)
         .show(egui_ctx.ctx_mut(), |ui| {
@@ -179,7 +188,9 @@ fn ui_system(mut bar_collection: ResMut<BarCollection>, mut egui_ctx: ResMut<Egu
                     });
             });
             ui.allocate_space(egui::Vec2::new(100.0, 2.0));
-            if ui.button("Run").clicked() {}
+            if ui.button("Run").clicked() {
+                state.overwrite_set(AppState::RUNNING).unwrap();
+            }
             ui.end_row();
         });
 }
