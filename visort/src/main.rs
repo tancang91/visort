@@ -35,7 +35,7 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             window: WindowDescriptor {
-                title: "I am a window!".to_string(),
+                title: "Algorithm visualizer!!".to_string(),
                 width: WINDOW_WIDTH,
                 height: WINDOW_HEIGHT,
                 ..default()
@@ -62,12 +62,7 @@ fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
 }
 
-fn setup(
-    mut commands: Commands,
-    mut bar_collection: ResMut<BarCollection>,
-    windows: Res<Windows>,
-    mut state: ResMut<State<AppState>>,
-) {
+fn setup(mut commands: Commands, mut bar_collection: ResMut<BarCollection>, windows: Res<Windows>) {
     let mut rng = rand::thread_rng();
     let window = windows.get_primary().unwrap();
 
@@ -75,10 +70,6 @@ fn setup(
     bar_collection.snapshot = None;
     bar_collection.index = 0;
     bar_collection.sorted = false;
-
-    // Rectangle
-    let x: f32 = -1.0 * (window.width() / 2.0) + WINDOW_PADDING;
-    let y_base: f32 = window.height() / 2.0 - WINDOW_PADDING;
 
     let mut range: Vec<f32> = (0..NUMBER_BARS)
         .into_iter()
@@ -90,8 +81,8 @@ fn setup(
     for (delta, w) in range.iter().enumerate() {
         let entity = commands
             .spawn(BarBunndle::new(
-                x,
-                rank_to_y(delta as u32, y_base),
+                -1.0 * (window.width() / 2.0) + WINDOW_PADDING,
+                rank_to_y(delta as u32, window.height()),
                 w.clone(),
                 BAR_HEIGH,
             ))
@@ -113,7 +104,6 @@ fn sorting_system(mut bar_collection: ResMut<BarCollection>, bars: Query<&Bar>) 
             bar_collection.snapshot = Some(InsertionSorter.sort(&ranges))
         }
         SortAlgorithm::BubbleSort => bar_collection.snapshot = Some(BubbleSorter.sort(&ranges)),
-        _ => {}
     }
 
     bar_collection.sorted = true;
@@ -153,7 +143,7 @@ fn render_system(
 
         AppState::END => {
             for (_, mut sprite, _) in query.iter_mut() {
-                sprite.color = Color::GREEN;
+                sprite.color = Color::DARK_GREEN;
             }
         }
 
