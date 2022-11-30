@@ -28,6 +28,7 @@ const TIMESTEP_1_PER_SECOND: f64 = 1.0 / 120.0;
 enum AppState {
     NEW,
     RUNNING,
+    PASUE,
     END,
 }
 
@@ -54,6 +55,7 @@ fn main() {
                 .with_run_criteria(FixedTimestep::step(TIMESTEP_1_PER_SECOND))
                 .with_system(render_system),
         )
+        .add_system_set(SystemSet::on_exit(AppState::END).with_system(teardown))
         .add_system(ui_system)
         .run();
 }
@@ -156,12 +158,14 @@ fn ui_system(
     mut egui_ctx: ResMut<EguiContext>,
     mut state: ResMut<State<AppState>>,
 ) {
+    let current_state = state.current().clone();
     egui::SidePanel::right("config_panel")
         //.default_width(100.0)
         .show(egui_ctx.ctx_mut(), |ui| {
             ui.allocate_space(egui::Vec2::new(100.0, 20.0));
             ui.vertical(|ui| {
                 ui.label("Select your algorithm");
+                // ComboBox sections
                 egui::ComboBox::from_label("")
                     .selected_text(format!("{:?}", bar_collection.algorithm))
                     .show_ui(ui, |ui| {
@@ -178,11 +182,48 @@ fn ui_system(
                     });
             });
             ui.allocate_space(egui::Vec2::new(100.0, 2.0));
-            if ui.button("Run").clicked() {
-                state.overwrite_set(AppState::RUNNING).unwrap();
+
+            let next_state = button(ui, current_state.clone());
+            if next_state != current_state {
+                state.overwrite_set(next_state).unwrap();
             }
             ui.end_row();
         });
+}
+
+fn teardown(mut commands: Commands, entities: Query<Entity, Without<Camera>>) {
+    for entity in entities.iter() {
+        commands.entity(entity).despawn_recursive();
+    }
+}
+
+fn button(ui: &mut egui::Ui, state: AppState) -> AppState {
+    match state {
+        AppState::NEW => {
+            if ui.button("Run").clicked() {
+                return AppState::RUNNING;
+            }
+        }
+
+        AppState::RUNNING => {
+            if ui.button("Pause").clicked() {
+                return AppState::PASUE;
+            }
+        }
+
+        AppState::PASUE => {
+            if ui.button("Resume").clicked() {
+                return AppState::RUNNING;
+            }
+        }
+
+        AppState::END => {
+            if ui.button("Reset").clicked() {
+                return AppState::NEW;
+            }
+        }
+    }
+    state
 }
 
 #[derive(Debug, PartialEq, Default)]
