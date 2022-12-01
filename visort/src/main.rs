@@ -2,11 +2,12 @@ mod utils;
 
 use bevy::time::FixedTimestep;
 use bevy::{prelude::*, sprite::Anchor};
+use bevy_egui::egui::{Color32, RichText};
 use bevy_egui::{egui, EguiContext, EguiPlugin};
 
 use rand::seq::SliceRandom;
 
-use visort_core::{BubbleSorter, InsertionSorter, Sorter};
+use visort_core::{BubbleSorter, InsertionSorter, SelectionSorter, Sorter};
 
 const BACKGROUND_COLOR: Color = Color::rgb(0.9, 0.9, 0.9);
 
@@ -101,14 +102,31 @@ fn sorting_system(mut bar_collection: ResMut<BarCollection>, bars: Query<&Bar>) 
         .map(|entity| bars.get(entity.clone()).unwrap().length as i32)
         .collect();
 
-    match bar_collection.algorithm {
-        SortAlgorithm::InsertionSort => {
-            bar_collection.snapshot = Some(InsertionSorter.sort(&ranges))
+    bar_collection.snapshot = match bar_collection.algorithm {
+        SortAlgorithm::InsertionSort => Some(InsertionSorter.sort(&ranges)),
+        SortAlgorithm::BubbleSort => Some(BubbleSorter.sort(&ranges)),
+        SortAlgorithm::SelectionSort => Some(SelectionSorter.sort(&ranges)),
+        SortAlgorithm::HeapSort => {
+            /* TODO: Not Implemented */
+            None
         }
-        SortAlgorithm::BubbleSort => bar_collection.snapshot = Some(BubbleSorter.sort(&ranges)),
-    }
+        SortAlgorithm::MergeSort => {
+            /* TODO: Not Implemented */
+            None
+        }
+        SortAlgorithm::QuickSort => {
+            /* TODO: Not Implemented */
+            None
+        }
+        SortAlgorithm::RadixSort => {
+            /* TODO: Not Implemented */
+            None
+        }
+    };
 
-    bar_collection.sorted = true;
+    if let Some(_) = bar_collection.snapshot {
+        bar_collection.sorted = true;
+    }
 }
 
 fn render_system(
@@ -179,6 +197,39 @@ fn ui_system(
                             SortAlgorithm::InsertionSort,
                             "InsertionSort",
                         );
+                        ui.selectable_value(
+                            &mut bar_collection.algorithm,
+                            SortAlgorithm::SelectionSort,
+                            "SelectionSort",
+                        );
+                        ui.selectable_value(
+                            &mut bar_collection.algorithm,
+                            SortAlgorithm::HeapSort,
+                            RichText::new("HeapSort")
+                                .color(Color32::GRAY)
+                                .strikethrough(),
+                        );
+                        ui.selectable_value(
+                            &mut bar_collection.algorithm,
+                            SortAlgorithm::MergeSort,
+                            RichText::new("MergeSort")
+                                .color(Color32::GRAY)
+                                .strikethrough(),
+                        );
+                        ui.selectable_value(
+                            &mut bar_collection.algorithm,
+                            SortAlgorithm::QuickSort,
+                            RichText::new("QuickSort")
+                                .color(Color32::GRAY)
+                                .strikethrough(),
+                        );
+                        ui.selectable_value(
+                            &mut bar_collection.algorithm,
+                            SortAlgorithm::RadixSort,
+                            RichText::new("RadixSort")
+                                .color(Color32::GRAY)
+                                .strikethrough(),
+                        );
                     });
             });
             ui.allocate_space(egui::Vec2::new(100.0, 2.0));
@@ -232,6 +283,11 @@ enum SortAlgorithm {
     #[default]
     BubbleSort,
     InsertionSort,
+    SelectionSort,
+    HeapSort,
+    MergeSort,
+    QuickSort,
+    RadixSort,
 }
 
 #[derive(Resource, Default)]
