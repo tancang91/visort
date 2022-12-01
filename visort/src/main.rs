@@ -21,9 +21,9 @@ const BAR_HEIGH: f32 = 4.0;
 const BAR_BASE_WIDTH: f32 = 20.0;
 const BAR_COLOR: Color = Color::RED;
 const BAR_PADDING: f32 = 2.0;
-const NUMBER_BARS: u8 = 50;
+const NUMBER_BARS: u8 = 20;
 
-const TIMESTEP_1_PER_SECOND: f64 = 1.0 / 120.0;
+const TIMESTEP_1_PER_SECOND: f64 = 1.0 / 60.0;
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 enum AppState {
@@ -162,8 +162,14 @@ fn render_system(
         }
 
         AppState::END => {
-            for (_, mut sprite, _) in query.iter_mut() {
-                sprite.color = Color::DARK_GREEN;
+            let length = match bar_collection.snapshot {
+                Some(ref s) => s.len(),
+                _ => 0,
+            };
+            if length == bar_collection.index as usize {
+                for (_, mut sprite, _) in query.iter_mut() {
+                    sprite.color = Color::DARK_GREEN;
+                }
             }
         }
 
@@ -257,9 +263,17 @@ fn button(ui: &mut egui::Ui, state: AppState) -> AppState {
         }
 
         AppState::RUNNING => {
-            if ui.button("Pause").clicked() {
-                return AppState::PASUE;
-            }
+            return ui
+                .horizontal(|ui| {
+                    if ui.button("Pause").clicked() {
+                        AppState::PASUE
+                    } else if ui.button("Stop").clicked() {
+                        AppState::END
+                    } else {
+                        state.clone()
+                    }
+                })
+                .inner;
         }
 
         AppState::PASUE => {
