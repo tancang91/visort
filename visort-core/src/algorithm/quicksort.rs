@@ -1,5 +1,4 @@
 use super::{add_snapshot, Sorter};
-use std::cmp::PartialOrd;
 
 pub struct QuickSorter;
 

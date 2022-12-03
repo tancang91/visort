@@ -6,8 +6,7 @@ use bevy_egui::egui::{Color32, RichText};
 use bevy_egui::{egui, EguiContext, EguiPlugin};
 
 use rand::seq::SliceRandom;
-
-use visort_core::{BubbleSorter, InsertionSorter, QuickSorter, SelectionSorter, Sorter};
+use visort_core::*;
 
 const BACKGROUND_COLOR: Color = Color::rgb(0.9, 0.9, 0.9);
 
@@ -107,10 +106,7 @@ fn sorting_system(mut bar_collection: ResMut<BarCollection>, bars: Query<&Bar>) 
         SortAlgorithm::BubbleSort => Some(BubbleSorter.sort(&ranges)),
         SortAlgorithm::SelectionSort => Some(SelectionSorter.sort(&ranges)),
         SortAlgorithm::QuickSort => Some(QuickSorter.sort(&ranges)),
-        SortAlgorithm::HeapSort => {
-            /* TODO: Not Implemented */
-            None
-        }
+        SortAlgorithm::HeapSort => Some(HeapSorter.sort(&ranges)),
         SortAlgorithm::MergeSort => {
             /* TODO: Not Implemented */
             None
@@ -213,9 +209,7 @@ fn ui_system(
                         ui.selectable_value(
                             &mut bar_collection.algorithm,
                             SortAlgorithm::HeapSort,
-                            RichText::new("HeapSort")
-                                .color(Color32::GRAY)
-                                .strikethrough(),
+                            "HeapSort",
                         );
                         ui.selectable_value(
                             &mut bar_collection.algorithm,
