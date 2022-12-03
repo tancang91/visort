@@ -1,6 +1,6 @@
 mod algorithm;
 
-pub use algorithm::{BubbleSorter, InsertionSorter, SelectionSorter, Sorter};
+pub use algorithm::{BubbleSorter, InsertionSorter, QuickSorter, SelectionSorter, Sorter};
 
 #[cfg(test)]
 mod tests {

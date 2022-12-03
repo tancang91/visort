@@ -1,4 +1,4 @@
-use super::Sorter;
+use super::{add_snapshot, Sorter};
 
 pub struct SelectionSorter;
 
@@ -28,9 +28,7 @@ where
             if unsorted != smallest_in_rest {
                 new_slice.swap(unsorted, smallest_in_rest);
 
-                let mut new = s.get(s.len() - 1).unwrap().clone();
-                new.swap(unsorted, smallest_in_rest);
-                s.push(new);
+                add_snapshot(&mut s, unsorted, smallest_in_rest);
             }
         }
         s

@@ -7,7 +7,7 @@ use bevy_egui::{egui, EguiContext, EguiPlugin};
 
 use rand::seq::SliceRandom;
 
-use visort_core::{BubbleSorter, InsertionSorter, SelectionSorter, Sorter};
+use visort_core::{BubbleSorter, InsertionSorter, QuickSorter, SelectionSorter, Sorter};
 
 const BACKGROUND_COLOR: Color = Color::rgb(0.9, 0.9, 0.9);
 
@@ -21,9 +21,9 @@ const BAR_HEIGH: f32 = 4.0;
 const BAR_BASE_WIDTH: f32 = 20.0;
 const BAR_COLOR: Color = Color::RED;
 const BAR_PADDING: f32 = 2.0;
-const NUMBER_BARS: u8 = 20;
+const NUMBER_BARS: u8 = 80;
 
-const TIMESTEP_1_PER_SECOND: f64 = 1.0 / 60.0;
+const TIMESTEP_1_PER_SECOND: f64 = 1.0 / 30.0;
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 enum AppState {
@@ -106,15 +106,12 @@ fn sorting_system(mut bar_collection: ResMut<BarCollection>, bars: Query<&Bar>) 
         SortAlgorithm::InsertionSort => Some(InsertionSorter.sort(&ranges)),
         SortAlgorithm::BubbleSort => Some(BubbleSorter.sort(&ranges)),
         SortAlgorithm::SelectionSort => Some(SelectionSorter.sort(&ranges)),
+        SortAlgorithm::QuickSort => Some(QuickSorter.sort(&ranges)),
         SortAlgorithm::HeapSort => {
             /* TODO: Not Implemented */
             None
         }
         SortAlgorithm::MergeSort => {
-            /* TODO: Not Implemented */
-            None
-        }
-        SortAlgorithm::QuickSort => {
             /* TODO: Not Implemented */
             None
         }
@@ -210,6 +207,11 @@ fn ui_system(
                         );
                         ui.selectable_value(
                             &mut bar_collection.algorithm,
+                            SortAlgorithm::QuickSort,
+                            "QuickSort",
+                        );
+                        ui.selectable_value(
+                            &mut bar_collection.algorithm,
                             SortAlgorithm::HeapSort,
                             RichText::new("HeapSort")
                                 .color(Color32::GRAY)
@@ -219,13 +221,6 @@ fn ui_system(
                             &mut bar_collection.algorithm,
                             SortAlgorithm::MergeSort,
                             RichText::new("MergeSort")
-                                .color(Color32::GRAY)
-                                .strikethrough(),
-                        );
-                        ui.selectable_value(
-                            &mut bar_collection.algorithm,
-                            SortAlgorithm::QuickSort,
-                            RichText::new("QuickSort")
                                 .color(Color32::GRAY)
                                 .strikethrough(),
                         );

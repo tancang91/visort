@@ -1,4 +1,4 @@
-use super::Sorter;
+use super::{add_snapshot, Sorter};
 
 pub struct BubbleSorter;
 
@@ -25,13 +25,10 @@ where
                     new_slice.swap(i - 1, i);
                     swapped = true;
 
-                    let mut new = s.get(s.len() - 1).unwrap().clone();
-                    new.swap(i - 1, i);
-                    s.push(new);
+                    add_snapshot(&mut s, i - 1, i)
                 }
             }
         }
-        //s.into_iter().rev().collect()
         s
     }
 }

@@ -1,4 +1,4 @@
-use super::Sorter;
+use super::{add_snapshot, Sorter};
 
 pub struct InsertionSorter;
 
@@ -20,11 +20,7 @@ where
             let mut i = unsorted;
             while i > 0 && new_slice[i - 1] > new_slice[i] {
                 new_slice.swap(i - 1, i);
-
-                let mut new = s.get(s.len() - 1).unwrap().clone();
-                new.swap(i - 1, i);
-                s.push(new);
-
+                add_snapshot(&mut s, i - 1, i);
                 i -= 1;
             }
         }
