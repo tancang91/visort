@@ -10,5 +10,6 @@ Sorting algorithm visualization written in Rust as learning projects
     - [X] Selection sort
     - [X] Quick sort
     - [X] Heap sort
+    - [X] Merge sort
 
 - [X] Visualization: Simple visualization for algorithms

@@ -94,9 +94,10 @@ fn setup(mut commands: Commands, mut bar_collection: ResMut<BarCollection>, wind
     }
 }
 
-fn sorting_system(mut bar_collection: ResMut<BarCollection>
-    , mut query: Query<(&Bar, &mut Sprite)>)
-{
+fn sorting_system(
+    mut bar_collection: ResMut<BarCollection>,
+    mut query: Query<(&Bar, &mut Sprite)>,
+) {
     let ranges: Vec<_> = bar_collection
         .bars
         .iter()
@@ -109,10 +110,7 @@ fn sorting_system(mut bar_collection: ResMut<BarCollection>
         SortAlgorithm::SelectionSort => Some(SelectionSorter.sort(&ranges)),
         SortAlgorithm::QuickSort => Some(QuickSorter.sort(&ranges)),
         SortAlgorithm::HeapSort => Some(HeapSorter.sort(&ranges)),
-        SortAlgorithm::MergeSort => {
-            /* TODO: Not Implemented */
-            None
-        }
+        SortAlgorithm::MergeSort => Some(MergeSorter.sort(&ranges)),
         SortAlgorithm::RadixSort => {
             /* TODO: Not Implemented */
             None
@@ -149,7 +147,7 @@ fn render_system(
 
                         for (rank, &index) in snapshot.iter().enumerate() {
                             let bar = bar_collection.bars[index as usize];
-                            if let Ok((_, _ , mut transform)) = query.get_mut(bar) {
+                            if let Ok((_, _, mut transform)) = query.get_mut(bar) {
                                 transform.translation.y = rank_to_y(rank as u32, height);
                             }
                         }
@@ -214,9 +212,7 @@ fn ui_system(
                         ui.selectable_value(
                             &mut bar_collection.algorithm,
                             SortAlgorithm::MergeSort,
-                            RichText::new("MergeSort")
-                                .color(Color32::GRAY)
-                                .strikethrough(),
+                            "MergeSort",
                         );
                         ui.selectable_value(
                             &mut bar_collection.algorithm,
