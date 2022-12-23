@@ -94,11 +94,14 @@ fn setup(mut commands: Commands, mut bar_collection: ResMut<BarCollection>, wind
     }
 }
 
-fn sorting_system(mut bar_collection: ResMut<BarCollection>, bars: Query<&Bar>) {
+fn sorting_system(
+    mut bar_collection: ResMut<BarCollection>,
+    mut query: Query<(&Bar, &mut Sprite)>,
+) {
     let ranges: Vec<_> = bar_collection
         .bars
         .iter()
-        .map(|entity| bars.get(entity.clone()).unwrap().length as i32)
+        .map(|entity| query.get(entity.clone()).unwrap().0.length as i32)
         .collect();
 
     bar_collection.snapshot = match bar_collection.algorithm {
@@ -107,17 +110,21 @@ fn sorting_system(mut bar_collection: ResMut<BarCollection>, bars: Query<&Bar>) 
         SortAlgorithm::SelectionSort => Some(SelectionSorter.sort(&ranges)),
         SortAlgorithm::QuickSort => Some(QuickSorter.sort(&ranges)),
         SortAlgorithm::HeapSort => Some(HeapSorter.sort(&ranges)),
-        SortAlgorithm::MergeSort => {
-            /* TODO: Not Implemented */
-            None
-        }
+        SortAlgorithm::MergeSort => Some(MergeSorter.sort(&ranges)),
         SortAlgorithm::RadixSort => {
             /* TODO: Not Implemented */
             None
         }
     };
 
-    if let Some(_) = bar_collection.snapshot {
+    if let Some(ref snapshot) = bar_collection.snapshot {
+        let s = snapshot.get(snapshot.len() - 1).unwrap();
+        for (rank, &index) in s.iter().enumerate() {
+            let bar = bar_collection.bars[index as usize];
+            if let Ok((_, mut sprite)) = query.get_mut(bar) {
+                sprite.color = Color::hsl(130.0, rank as f32 / NUMBER_BARS as f32, 0.5);
+            }
+        }
         bar_collection.sorted = true;
     }
 }
@@ -140,9 +147,8 @@ fn render_system(
 
                         for (rank, &index) in snapshot.iter().enumerate() {
                             let bar = bar_collection.bars[index as usize];
-                            if let Ok((_, mut sprite, mut transform)) = query.get_mut(bar) {
+                            if let Ok((_, _, mut transform)) = query.get_mut(bar) {
                                 transform.translation.y = rank_to_y(rank as u32, height);
-                                sprite.color = Color::BLUE;
                             }
                         }
                         bar_collection.index += 1;
@@ -155,15 +161,7 @@ fn render_system(
         }
 
         AppState::END => {
-            let length = match bar_collection.snapshot {
-                Some(ref s) => s.len(),
-                _ => 0,
-            };
-            if length == bar_collection.index as usize {
-                for (_, mut sprite, _) in query.iter_mut() {
-                    sprite.color = Color::DARK_GREEN;
-                }
-            }
+            // TODO: Do something when sorted
         }
 
         _ => {}
@@ -214,9 +212,7 @@ fn ui_system(
                         ui.selectable_value(
                             &mut bar_collection.algorithm,
                             SortAlgorithm::MergeSort,
-                            RichText::new("MergeSort")
-                                .color(Color32::GRAY)
-                                .strikethrough(),
+                            "MergeSort",
                         );
                         ui.selectable_value(
                             &mut bar_collection.algorithm,

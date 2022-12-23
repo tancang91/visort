@@ -1,7 +1,7 @@
 mod algorithm;
 
 pub use algorithm::{
-    BubbleSorter, HeapSorter, InsertionSorter, QuickSorter, SelectionSorter, Sorter,
+    BubbleSorter, HeapSorter, InsertionSorter, MergeSorter, QuickSorter, SelectionSorter, Sorter,
 };
 
 #[cfg(test)]
@@ -11,7 +11,7 @@ mod tests {
     #[test]
     fn test_sorting() {
         let mut things = vec![4, 2, 13, 50, 10];
-        let res = SelectionSorter.sort(&mut things);
+        let res = MergeSorter.sort(&mut things);
         for i in &res {
             eprintln!("{:?}", i);
         }
